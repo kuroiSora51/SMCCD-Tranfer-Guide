@@ -1,0 +1,38 @@
+{% load static %}
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>{% block title %}SMCCD Transfer Guide{% endblock %}</title>
+  <link rel="stylesheet" href="{% static 'guide/styles.css' %}">
+</head>
+<body>
+  <header class="site-header">
+    <a class="brand" href="{% url 'guide:home' %}">
+      <span class="brand-mark">STG</span>
+      <span>
+        <strong>SMCCD Transfer Guide</strong>
+        <small>Plan GE, major prep, and articulation work</small>
+      </span>
+    </a>
+    <nav>
+      <a href="{% url 'guide:home' %}">Paths</a>
+      <a href="{% url 'guide:course_search' %}">Courses</a>
+      <a href="/admin/">Admin</a>
+    </nav>
+  </header>
+
+  {% if messages %}
+    <div class="messages" aria-live="polite">
+      {% for message in messages %}
+        <div class="message {{ message.tags }}">{{ message }}</div>
+      {% endfor %}
+    </div>
+  {% endif %}
+
+  <main>
+    {% block content %}{% endblock %}
+  </main>
+</body>
+</html>

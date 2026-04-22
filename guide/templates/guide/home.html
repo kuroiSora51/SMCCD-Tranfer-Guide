@@ -1,0 +1,60 @@
+{% extends 'guide/base.html' %}
+
+{% block title %}STG Paths{% endblock %}
+
+{% block content %}
+<section class="hero">
+  <div class="hero-copy">
+    <p class="eyebrow">Transfer planning for SMCCD students</p>
+    <h1>Pick a path, build a course plan, and layer in major requirements.</h1>
+    <p>Start with a general education pattern, then use the course database and ASSIST-backed entries as your articulation data grows.</p>
+  </div>
+  <form class="search-panel" action="{% url 'guide:course_search' %}" method="get">
+    <label for="q">Find a course</label>
+    <div class="search-row">
+      <input id="q" name="q" type="search" placeholder="MATH 251, ENGL 100, professor, CRN">
+      <button type="submit">Search</button>
+    </div>
+  </form>
+</section>
+
+<section class="section">
+  <div class="section-heading">
+    <p class="eyebrow">Known paths</p>
+    <h2>Choose the transfer framework</h2>
+  </div>
+  <div class="path-grid">
+    {% for path in paths %}
+      <article class="path-card">
+        <div>
+          <p class="path-audience">{{ path.audience }}</p>
+          <h3>{{ path.name }}</h3>
+          <p>{{ path.summary }}</p>
+        </div>
+        <div class="card-meta">
+          <span>{{ path.areas.count }} areas</span>
+          <a href="{% url 'guide:path_detail' path.slug %}">Open plan</a>
+        </div>
+      </article>
+    {% empty %}
+      <p>No transfer paths have been configured yet. Run migrations to seed the starter paths.</p>
+    {% endfor %}
+  </div>
+</section>
+
+<section class="section split">
+  <div>
+    <p class="eyebrow">Course source</p>
+    <h2>Current SMCCD schedule database</h2>
+    <p>The app reads directly from <code>database.db</code>. STG-owned tables live beside the imported course tables so progress, paths, and ASSIST mappings can be managed in Django.</p>
+  </div>
+  <div class="compact-list">
+    {% for course in recent_courses %}
+      <div class="compact-item">
+        <strong>{{ course.code }}</strong>
+        <span>{{ course.title }}</span>
+      </div>
+    {% endfor %}
+  </div>
+</section>
+{% endblock %}
