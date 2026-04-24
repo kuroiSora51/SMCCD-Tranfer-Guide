@@ -4,7 +4,33 @@ from django.http import HttpResponseBadRequest
 from django.shortcuts import get_object_or_404, redirect, render
 from django.urls import reverse
 
-from .models import ArticulationRule, Course, MajorPlan, RequirementArea, StudentPlanItem, TransferPath
+from .models import (
+    Agreement,
+    AgreementMajor,
+    ArticulationRule,
+    Course,
+    CourseEquivalence,
+    MajorPlan,
+    RequirementArea,
+    StudentPlanItem,
+    TransferPath,
+    display_institution_name,
+)
+
+
+DEFAULT_TRANSFER_SCHOOLS = [
+    'University of California, Berkeley',
+    'University of California, Santa Cruz',
+    'University of California, Davis',
+    'University of California, Irvine',
+    'University of California, Los Angeles',
+    'University of California, Merced',
+    'University of California, Riverside',
+    'University of California, San Diego',
+    'University of California, Santa Barbara',
+    'San Francisco State University',
+    'San Jose State University',
+]
 
 
 def _session_key(request):
@@ -32,6 +58,28 @@ def _recommended_courses(area):
     for hint in area.hints:
         courses = courses | Course.objects.filter(name__icontains=hint)
     return courses.distinct().order_by('name', 'college_name')[:8]
+
+
+def _course_options_text(area):
+    if area.hints:
+        return ' or '.join(area.hints)
+    return 'approved transferable courses'
+
+
+def _subject_prefix(course_code):
+    return (course_code or '').split(' ', 1)[0].strip().upper()
+
+
+def _agreement_major_query(selected_source, selected_school, major_query=''):
+    if not selected_source or not selected_school:
+        return AgreementMajor.objects.none()
+    majors = AgreementMajor.objects.filter(
+        agreement__source_college=selected_source,
+        agreement__target_institution=selected_school,
+    )
+    if major_query:
+        majors = majors.filter(name__icontains=major_query)
+    return majors.order_by('name')
 
 
 def home(request):
@@ -65,6 +113,22 @@ def path_detail(request, slug):
     for area in path.areas.all():
         area.plan_items = items_by_area.get(area.id, [])
         area.recommended_courses = _recommended_courses(area)
+        complete_count = sum(1 for item in area.plan_items if item.is_complete)
+        planned_count = len(area.plan_items)
+        area.remaining_courses = max(area.minimum_courses - complete_count, 0)
+        area.selected_label = ', '.join(
+            item.course.code if item.course_id else item.custom_label for item in area.plan_items
+        )
+        area.options_text = _course_options_text(area)
+        if area.remaining_courses == 0 and area.minimum_courses:
+            area.status_label = 'complete'
+            area.status_symbol = '✓'
+        elif planned_count:
+            area.status_label = 'planned'
+            area.status_symbol = '○'
+        else:
+            area.status_label = 'needed'
+            area.status_symbol = ''
         areas.append(area)
     majors = MajorPlan.objects.filter(Q(path=path) | Q(path__isnull=True)).prefetch_related('requirements')[:10]
     articulations = ArticulationRule.objects.filter(target_requirement__icontains=path.name)[:10]
@@ -77,6 +141,91 @@ def path_detail(request, slug):
             'majors': majors,
             'progress': progress,
             'articulations': articulations,
+        },
+    )
+
+
+def major_path(request):
+    selected_source = request.GET.get('source', '').strip()
+    selected_school = request.GET.get('school', '').strip()
+    selected_major = request.GET.get('major', '').strip()
+    major_query = request.GET.get('major_q', '').strip()
+    imported_school_values = set(Agreement.objects.values_list('target_institution', flat=True))
+    if selected_source:
+        imported_school_values = set(
+            Agreement.objects.filter(source_college=selected_source).values_list('target_institution', flat=True)
+        )
+    school_values = set(DEFAULT_TRANSFER_SCHOOLS)
+    school_values.update(imported_school_values)
+    school_values.update(ArticulationRule.objects.exclude(target_institution='').values_list('target_institution', flat=True))
+    school_values.update(MajorPlan.objects.exclude(institution='').values_list('institution', flat=True))
+    schools = [
+        {
+            'value': school,
+            'label': display_institution_name(school),
+            'imported': school in imported_school_values,
+        }
+        for school in sorted(school_values, key=display_institution_name)
+    ]
+
+    imported_majors = _agreement_major_query(selected_source, selected_school, major_query)
+    major_plans = imported_majors.select_related('agreement')
+
+    equivalences = CourseEquivalence.objects.select_related('major', 'major__agreement')
+    if not selected_source or not selected_school or not selected_major:
+        equivalences = equivalences.none()
+    else:
+        equivalences = equivalences.filter(
+            major_id=selected_major,
+            major__agreement__source_college=selected_source,
+            major__agreement__target_institution=selected_school,
+        )
+
+    direct_equivalents = []
+    current_subject = None
+    subject_band = 0
+    for equivalence in equivalences.order_by(
+        'major__agreement__target_institution',
+        'major__agreement__source_college',
+        'major__name',
+        'smccd_course_code',
+        'target_course_code',
+    ):
+        subject = _subject_prefix(equivalence.smccd_course_code)
+        if subject != current_subject:
+            current_subject = subject
+            subject_band = 1 - subject_band
+        direct_equivalents.append(
+            {
+                'equivalence': equivalence,
+                'subject': subject,
+                'subject_band': subject_band,
+                'school': equivalence.major.agreement.display_target_institution,
+                'source': equivalence.major.agreement.get_source_college_display(),
+                'major': equivalence.major.name,
+                'target_requirement': f'{equivalence.target_course_code} {equivalence.target_course_name}'.strip(),
+                'course_code': equivalence.smccd_course_code,
+                'course_title': equivalence.smccd_course_name,
+                'college': equivalence.major.agreement.get_source_college_display(),
+                'status': 'Articulated' if equivalence.is_articulated else 'No course articulated',
+                'units': equivalence.smccd_units,
+                'conditions': equivalence.conditions,
+            }
+        )
+
+    return render(
+        request,
+        'guide/major_path.html',
+        {
+            'source_choices': Agreement.SOURCE_COLLEGE_CHOICES,
+            'selected_source': selected_source,
+            'schools': schools,
+            'imported_schools': imported_school_values,
+            'selected_school': selected_school,
+            'major_plans': major_plans,
+            'selected_major': selected_major,
+            'major_query': major_query,
+            'direct_equivalents': direct_equivalents,
         },
     )
 

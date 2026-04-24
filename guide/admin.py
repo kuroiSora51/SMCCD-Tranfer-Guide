@@ -1,7 +1,10 @@
 from django.contrib import admin
 
 from .models import (
+    Agreement,
+    AgreementMajor,
     ArticulationRule,
+    CourseEquivalence,
     Course,
     MajorPlan,
     MajorRequirement,
@@ -52,10 +55,61 @@ class MajorPlanAdmin(admin.ModelAdmin):
 
 @admin.register(ArticulationRule)
 class ArticulationRuleAdmin(admin.ModelAdmin):
-    list_display = ('smccd_course_text', 'source_course', 'target_institution', 'target_requirement', 'verified_on')
-    search_fields = ('smccd_course_text', 'target_institution', 'target_requirement', 'notes')
-    list_filter = ('target_institution', 'verified_on')
-    autocomplete_fields = ('source_course',)
+    list_display = ('smccd_course_text', 'source_course', 'major_plan', 'target_institution', 'target_requirement', 'verified_on')
+    search_fields = ('smccd_course_text', 'target_institution', 'target_requirement', 'major_plan__name', 'notes')
+    list_filter = ('target_institution', 'major_plan', 'verified_on')
+    autocomplete_fields = ('source_course', 'major_plan')
+
+
+class AgreementMajorInline(admin.TabularInline):
+    model = AgreementMajor
+    extra = 0
+    fields = ('name', 'assist_key', 'assist_url')
+
+
+@admin.register(Agreement)
+class AgreementAdmin(admin.ModelAdmin):
+    list_display = ('source_college', 'target_institution', 'academic_year', 'last_scraped')
+    search_fields = ('target_institution', 'academic_year')
+    list_filter = ('source_college', 'academic_year')
+    inlines = [AgreementMajorInline]
+
+
+class CourseEquivalenceInline(admin.TabularInline):
+    model = CourseEquivalence
+    extra = 0
+    fields = (
+        'smccd_course_code',
+        'smccd_course_name',
+        'target_course_code',
+        'target_course_name',
+        'group_conjunction',
+        'course_conjunction',
+        'conditions',
+        'is_articulated',
+    )
+
+
+@admin.register(AgreementMajor)
+class AgreementMajorAdmin(admin.ModelAdmin):
+    list_display = ('name', 'agreement')
+    search_fields = ('name', 'agreement__target_institution')
+    list_filter = ('agreement__source_college', 'agreement__target_institution')
+    inlines = [CourseEquivalenceInline]
+
+
+@admin.register(CourseEquivalence)
+class CourseEquivalenceAdmin(admin.ModelAdmin):
+    list_display = ('smccd_course_code', 'target_course_code', 'major', 'is_articulated')
+    search_fields = (
+        'smccd_course_code',
+        'smccd_course_name',
+        'target_course_code',
+        'target_course_name',
+        'major__name',
+        'major__agreement__target_institution',
+    )
+    list_filter = ('is_articulated', 'major__agreement__source_college', 'major__agreement__target_institution')
 
 
 @admin.register(StudentPlanItem)

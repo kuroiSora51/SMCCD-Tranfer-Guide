@@ -1,0 +1,153 @@
+{% extends 'guide/base.html' %}
+
+{% block title %}Major Path | STG{% endblock %}
+
+{% block content %}
+<section class="path-hero compact-hero">
+  <div>
+    <p class="eyebrow">Major preparation</p>
+    <h1>Choose transfer schools, then show direct equivalents.</h1>
+    <p>Select one SMCCD college and one target school. Once both are selected, choose a major to show the SMCCD courses that directly satisfy that ASSIST agreement.</p>
+  </div>
+</section>
+
+<section class="major-layout">
+  <form class="choice-panel" method="get" data-major-path-form>
+    <div class="choice-step">
+      <p class="eyebrow">Step 1</p>
+      <h2>SMCCD college</h2>
+      <div class="check-list">
+        {% for value, label in source_choices %}
+          <label>
+            <input type="radio" name="source" value="{{ value }}" {% if value == selected_source %}checked{% endif %} data-reset-major>
+            <span>{{ label }}</span>
+          </label>
+        {% endfor %}
+      </div>
+    </div>
+
+    <div class="choice-step">
+      <p class="eyebrow">Step 2</p>
+      <h2>Schools</h2>
+      <div class="check-list">
+        {% for school in schools %}
+          <label>
+            <input type="radio" name="school" value="{{ school.value }}" {% if school.value == selected_school %}checked{% endif %} data-reset-major>
+            <span>
+              {{ school.label }}
+              {% if selected_source and not school.imported %}<small>No imported agreement yet</small>{% endif %}
+            </span>
+          </label>
+        {% endfor %}
+      </div>
+    </div>
+
+    <div class="choice-step major-step">
+      <p class="eyebrow">Step 3</p>
+      <h2>Majors</h2>
+      {% if selected_source and selected_school %}
+        <div class="major-search-row">
+          <input class="major-search" type="search" name="major_q" value="{{ major_query }}" placeholder="Search major name">
+          <button type="submit">Search majors</button>
+        </div>
+        <div class="check-list major-list">
+          {% for major in major_plans %}
+            <label>
+              <input type="radio" name="major" value="{{ major.id }}" {% if major.id|stringformat:'s' == selected_major %}checked{% endif %} data-submit-on-change>
+              <span>{{ major.name }}</span>
+            </label>
+          {% endfor %}
+        </div>
+        {% if not major_plans %}
+          <p class="inline-note">No majors matched this school and search. Import more ASSIST agreements or try another search.</p>
+        {% endif %}
+      {% else %}
+        <div class="empty-step">
+          <strong>Choose one SMCCD college and one target school first.</strong>
+          <span>Major agreements are loaded from that exact ASSIST agreement.</span>
+        </div>
+      {% endif %}
+    </div>
+
+    <div class="choice-actions">
+      <button type="submit">Show equivalents</button>
+      <a href="{% url 'guide:major_path' %}">Clear</a>
+    </div>
+  </form>
+
+  <div class="equivalent-panel">
+    <div class="section-heading table-heading">
+      <div>
+        <p class="eyebrow">Direct equivalent classes</p>
+        <h2>SMCCD matches</h2>
+      </div>
+      <span>{{ direct_equivalents|length }} result{{ direct_equivalents|length|pluralize }}</span>
+    </div>
+
+    <div class="equivalent-table">
+      <div class="equivalent-row header">
+        <span>School</span>
+        <span>Major / requirement</span>
+        <span>SMCCD course</span>
+        <span>Availability</span>
+      </div>
+      {% for item in direct_equivalents %}
+        <article class="equivalent-row subject-band-{{ item.subject_band }}">
+          <span>{{ item.school }}<small>From {{ item.source }}</small></span>
+          <span>
+            <strong>{{ item.major }}</strong>
+            {{ item.target_requirement }}
+          </span>
+          <span>
+            <strong>{{ item.course_code }}</strong>
+            {% if item.course_title %}<small>{{ item.course_title }} · {{ item.college }}</small>{% endif %}
+          </span>
+          <span>
+            {% if item.status %}{{ item.status }}{% else %}Verified equivalent{% endif %}
+            {% if item.units %}<small>{{ item.units|floatformat }} units</small>{% endif %}
+            {% if item.conditions %}<small>{{ item.conditions }}</small>{% endif %}
+            {% if item.equivalence.major.assist_url %}<a href="{{ item.equivalence.major.assist_url }}" target="_blank" rel="noreferrer">ASSIST</a>{% endif %}
+          </span>
+        </article>
+      {% empty %}
+        <div class="empty-state">
+          <h3>No direct equivalents found yet</h3>
+          <p>Select one SMCCD college, one target school, and one major. If the major list is empty, import that ASSIST agreement first.</p>
+        </div>
+      {% endfor %}
+    </div>
+  </div>
+</section>
+{% endblock %}
+
+{% block scripts %}
+<script>
+  (() => {
+    const form = document.querySelector('[data-major-path-form]');
+    if (!form) return;
+
+    const submitForm = () => {
+      if (form.requestSubmit) {
+        form.requestSubmit();
+      } else {
+        form.submit();
+      }
+    };
+
+    form.querySelectorAll('[data-reset-major]').forEach((input) => {
+      input.addEventListener('change', () => {
+        form.querySelectorAll('input[name="major"]').forEach((major) => {
+          major.checked = false;
+        });
+        const majorSearch = form.querySelector('input[name="major_q"]');
+        if (majorSearch) majorSearch.value = '';
+        submitForm();
+      });
+    });
+
+    form.querySelectorAll('[data-submit-on-change]').forEach((input) => {
+      input.addEventListener('change', submitForm);
+    });
+  })();
+</script>
+{% endblock %}

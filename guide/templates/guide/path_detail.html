@@ -3,7 +3,7 @@
 {% block title %}{{ path.name }} | STG{% endblock %}
 
 {% block content %}
-<section class="path-hero">
+<section class="path-hero compact-hero">
   <div>
     <p class="eyebrow">{{ path.audience }}</p>
     <h1>{{ path.name }}</h1>
@@ -17,102 +17,93 @@
   </div>
 </section>
 
-<section class="planner-layout">
-  <div class="requirements">
+<section class="section">
+  <div class="section-heading table-heading">
+    <div>
+      <p class="eyebrow">General education planner</p>
+      <h2>Requirements</h2>
+    </div>
+    <a class="quiet-link" href="{% url 'guide:major_path' %}">Go to major path</a>
+  </div>
+
+  <div class="ge-table">
     {% for area in areas %}
-      <article id="area-{{ area.id }}" class="requirement">
+      <article id="area-{{ area.id }}" class="ge-row {{ area.status_label }}">
         <details {% if forloop.first %}open{% endif %}>
-          <summary>
-            <span>
-              <strong>{{ area.short_label|default:area.name }}</strong>
-              <small>{{ area.minimum_courses }} course{{ area.minimum_courses|pluralize }}{% if area.minimum_units %}, {{ area.minimum_units }} units{% endif %}</small>
+          <summary class="ge-summary">
+            <span class="status-dot" aria-label="{{ area.status_label }}">{{ area.status_symbol }}</span>
+            <span class="ge-area">{{ area.short_label|default:area.name }}</span>
+            <span class="ge-selected">
+              {% if area.selected_label %}
+                {{ area.selected_label }}
+              {% elif area.remaining_courses %}
+                <strong>Still needed:</strong>
+              {% else %}
+                Complete
+              {% endif %}
+            </span>
+            <span class="ge-options">
+              {% if area.remaining_courses %}
+                {{ area.remaining_courses }} Class{{ area.remaining_courses|pluralize }}{% if area.minimum_units %} and {{ area.minimum_units }} Units{% endif %} in
+                <b>{{ area.options_text }}</b>
+              {% else %}
+                {{ area.description }}
+              {% endif %}
             </span>
           </summary>
-          <p>{{ area.description }}</p>
 
-          {% if area.recommended_courses %}
-            <div class="course-strip">
-              {% for course in area.recommended_courses %}
-                <form method="post" action="{% url 'guide:add_plan_item' path.slug %}" class="course-pill">
-                  {% csrf_token %}
-                  <input type="hidden" name="area_id" value="{{ area.id }}">
-                  <input type="hidden" name="course_id" value="{{ course.id }}">
-                  <div>
-                    <strong>{{ course.code }}</strong>
-                    <span>{{ course.college_name }} · {{ course.status }} · {{ course.units|floatformat }} units</span>
-                  </div>
-                  <button type="submit" title="Add {{ course.code }}">+</button>
-                </form>
-              {% endfor %}
-            </div>
-          {% endif %}
+          <div class="ge-detail">
+            <p>{{ area.description }}</p>
 
-          <form method="post" action="{% url 'guide:add_plan_item' path.slug %}" class="custom-plan-form">
-            {% csrf_token %}
-            <input type="hidden" name="area_id" value="{{ area.id }}">
-            <input name="custom_label" placeholder="Add a planned course or major requirement">
-            <input name="notes" placeholder="Notes, target university, ASSIST detail">
-            <button type="submit">Add</button>
-          </form>
-
-          {% if area.plan_items %}
-            <div class="plan-items">
-              {% for item in area.plan_items %}
-                <div class="plan-item {% if item.is_complete %}complete{% endif %}">
-                  <form method="post" action="{% url 'guide:toggle_plan_item' item.id %}">
+            {% if area.recommended_courses %}
+              <div class="course-strip">
+                {% for course in area.recommended_courses %}
+                  <form method="post" action="{% url 'guide:add_plan_item' path.slug %}" class="course-pill">
                     {% csrf_token %}
-                    <button type="submit" class="check" title="Toggle completion">{% if item.is_complete %}✓{% else %}○{% endif %}</button>
+                    <input type="hidden" name="area_id" value="{{ area.id }}">
+                    <input type="hidden" name="course_id" value="{{ course.id }}">
+                    <div>
+                      <strong>{{ course.code }}</strong>
+                      <span>{{ course.college_name }} · {{ course.status }} · {{ course.units|floatformat }} units</span>
+                    </div>
+                    <button type="submit" title="Add {{ course.code }}">+</button>
                   </form>
-                  <div>
-                    <strong>{% if item.course %}{{ item.course.code }}{% else %}{{ item.custom_label }}{% endif %}</strong>
-                    <span>{% if item.course %}{{ item.course.title }} · {{ item.course.college_name }}{% else %}{{ item.notes }}{% endif %}</span>
+                {% endfor %}
+              </div>
+            {% endif %}
+
+            <form method="post" action="{% url 'guide:add_plan_item' path.slug %}" class="custom-plan-form">
+              {% csrf_token %}
+              <input type="hidden" name="area_id" value="{{ area.id }}">
+              <input name="custom_label" placeholder="Add a planned course or requirement">
+              <input name="notes" placeholder="Notes, target university, ASSIST detail">
+              <button type="submit">Add</button>
+            </form>
+
+            {% if area.plan_items %}
+              <div class="plan-items">
+                {% for item in area.plan_items %}
+                  <div class="plan-item {% if item.is_complete %}complete{% endif %}">
+                    <form method="post" action="{% url 'guide:toggle_plan_item' item.id %}">
+                      {% csrf_token %}
+                      <button type="submit" class="check" title="Toggle completion">{% if item.is_complete %}✓{% else %}○{% endif %}</button>
+                    </form>
+                    <div>
+                      <strong>{% if item.course %}{{ item.course.code }}{% else %}{{ item.custom_label }}{% endif %}</strong>
+                      <span>{% if item.course %}{{ item.course.title }} · {{ item.course.college_name }}{% else %}{{ item.notes }}{% endif %}</span>
+                    </div>
+                    <form method="post" action="{% url 'guide:delete_plan_item' item.id %}">
+                      {% csrf_token %}
+                      <button type="submit" class="text-button">Remove</button>
+                    </form>
                   </div>
-                  <form method="post" action="{% url 'guide:delete_plan_item' item.id %}">
-                    {% csrf_token %}
-                    <button type="submit" class="text-button">Remove</button>
-                  </form>
-                </div>
-              {% endfor %}
-            </div>
-          {% endif %}
+                {% endfor %}
+              </div>
+            {% endif %}
+          </div>
         </details>
       </article>
     {% endfor %}
   </div>
-
-  <aside class="side-panel">
-    <section>
-      <h2>Major prep</h2>
-      {% for major in majors %}
-        <details class="major-card">
-          <summary>{{ major.name }}{% if major.institution %} · {{ major.institution }}{% endif %}</summary>
-          {% if major.overview %}<p>{{ major.overview }}</p>{% endif %}
-          {% if major.assist_url %}<a href="{{ major.assist_url }}" target="_blank" rel="noreferrer">ASSIST source</a>{% endif %}
-          {% for req in major.requirements.all %}
-            <div class="major-req">
-              <strong>{{ req.name }}</strong>
-              <span>{{ req.description }}</span>
-            </div>
-          {% empty %}
-            <p>Add major requirements in admin as you pull them from ASSIST.</p>
-          {% endfor %}
-        </details>
-      {% empty %}
-        <p>Create major plans in admin to show progressive major-prep checklists here.</p>
-      {% endfor %}
-    </section>
-
-    <section>
-      <h2>Articulations</h2>
-      {% for rule in articulations %}
-        <div class="articulation">
-          <strong>{% if rule.smccd_course_text %}{{ rule.smccd_course_text }}{% else %}{{ rule.source_course.code }}{% endif %}</strong>
-          <span>{{ rule.target_institution }} · {{ rule.target_requirement }}</span>
-        </div>
-      {% empty %}
-        <p>ASSIST conversions can be entered in admin and linked to SMCCD courses.</p>
-      {% endfor %}
-    </section>
-  </aside>
 </section>
 {% endblock %}

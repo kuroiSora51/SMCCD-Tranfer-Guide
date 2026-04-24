@@ -15,6 +15,7 @@
       <input id="q" name="q" type="search" placeholder="MATH 251, ENGL 100, professor, CRN">
       <button type="submit">Search</button>
     </div>
+    <a class="panel-link" href="{% url 'guide:major_path' %}">Choose transfer schools for major prep</a>
   </form>
 </section>
 
@@ -42,19 +43,4 @@
   </div>
 </section>
 
-<section class="section split">
-  <div>
-    <p class="eyebrow">Course source</p>
-    <h2>Current SMCCD schedule database</h2>
-    <p>The app reads directly from <code>database.db</code>. STG-owned tables live beside the imported course tables so progress, paths, and ASSIST mappings can be managed in Django.</p>
-  </div>
-  <div class="compact-list">
-    {% for course in recent_courses %}
-      <div class="compact-item">
-        <strong>{{ course.code }}</strong>
-        <span>{{ course.title }}</span>
-      </div>
-    {% endfor %}
-  </div>
-</section>
 {% endblock %}

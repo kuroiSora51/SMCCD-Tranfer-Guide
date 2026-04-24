@@ -3,6 +3,17 @@ import re
 from django.db import models
 
 
+def display_institution_name(name):
+    replacements = {
+        'University of California, ': 'UC ',
+        'California State University, ': 'CSU ',
+    }
+    for original, replacement in replacements.items():
+        if name.startswith(original):
+            return name.replace(original, replacement, 1)
+    return name
+
+
 class Course(models.Model):
     id = models.IntegerField(primary_key=True)
     name = models.TextField(blank=True, null=True)
@@ -139,6 +150,7 @@ class MajorRequirement(models.Model):
 
 
 class ArticulationRule(models.Model):
+    major_plan = models.ForeignKey(MajorPlan, on_delete=models.CASCADE, null=True, blank=True, related_name='articulations')
     source_course = models.ForeignKey(Course, on_delete=models.SET_NULL, null=True, blank=True, db_constraint=False)
     smccd_course_text = models.CharField(max_length=160, blank=True)
     target_institution = models.CharField(max_length=140)
@@ -153,6 +165,104 @@ class ArticulationRule(models.Model):
     def __str__(self):
         label = self.source_course.code if self.source_course else self.smccd_course_text
         return f'{label} -> {self.target_institution} {self.target_requirement}'
+
+
+class Agreement(models.Model):
+    COLLEGE_OF_SAN_MATEO = 'CSM'
+    SKYLINE = 'SKYLINE'
+    CANADA = 'CANADA'
+    SOURCE_COLLEGE_CHOICES = [
+        (COLLEGE_OF_SAN_MATEO, 'College of San Mateo'),
+        (SKYLINE, 'Skyline College'),
+        (CANADA, 'Canada College'),
+    ]
+
+    source_college = models.CharField(max_length=20, choices=SOURCE_COLLEGE_CHOICES)
+    source_institution_id = models.PositiveIntegerField(null=True, blank=True)
+    target_institution = models.CharField(max_length=140, db_index=True)
+    target_institution_id = models.PositiveIntegerField(null=True, blank=True)
+    academic_year = models.CharField(max_length=20, blank=True)
+    academic_year_id = models.PositiveIntegerField(null=True, blank=True)
+    assist_url = models.URLField(unique=True)
+    last_scraped = models.DateTimeField(null=True, blank=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        ordering = ['source_college', 'target_institution']
+        unique_together = [('source_college', 'target_institution')]
+        indexes = [
+            models.Index(fields=['source_college', 'target_institution']),
+        ]
+
+    def __str__(self):
+        return f'{self.get_source_college_display()} -> {self.display_target_institution}'
+
+    @property
+    def display_target_institution(self):
+        return display_institution_name(self.target_institution)
+
+
+class AgreementMajor(models.Model):
+    agreement = models.ForeignKey(Agreement, on_delete=models.CASCADE, related_name='majors')
+    name = models.CharField(max_length=200)
+    assist_key = models.CharField(max_length=260, blank=True, db_index=True)
+    assist_url = models.URLField(blank=True)
+
+    class Meta:
+        ordering = ['agreement', 'name']
+        unique_together = [('agreement', 'name')]
+
+    def __str__(self):
+        return f'{self.agreement}: {self.name}'
+
+
+class CourseEquivalence(models.Model):
+    major = models.ForeignKey(AgreementMajor, on_delete=models.CASCADE, related_name='equivalences')
+    smccd_course_code = models.CharField(max_length=50)
+    smccd_course_name = models.CharField(max_length=200, blank=True)
+    smccd_units = models.DecimalField(max_digits=4, decimal_places=1, null=True, blank=True)
+    target_course_code = models.CharField(max_length=50)
+    target_course_name = models.CharField(max_length=200, blank=True)
+    target_units = models.DecimalField(max_digits=4, decimal_places=1, null=True, blank=True)
+    group_conjunction = models.CharField(max_length=20, blank=True)
+    course_conjunction = models.CharField(max_length=20, blank=True)
+    prerequisites = models.TextField(blank=True, help_text='Prerequisites for the target course')
+    conditions = models.TextField(blank=True, help_text='Special conditions, advisories, or no-articulation notes')
+    is_articulated = models.BooleanField(default=True)
+    raw_template_cell_id = models.CharField(max_length=80, blank=True)
+    source_group_position = models.IntegerField(default=-1)
+    source_course_position = models.IntegerField(default=-1)
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        ordering = [
+            'major',
+            'smccd_course_code',
+            'target_course_code',
+            'raw_template_cell_id',
+            'source_group_position',
+            'source_course_position',
+        ]
+        unique_together = [
+            (
+                'major',
+                'raw_template_cell_id',
+                'source_group_position',
+                'source_course_position',
+                'smccd_course_code',
+                'target_course_code',
+            )
+        ]
+        indexes = [
+            models.Index(fields=['major', 'smccd_course_code']),
+            models.Index(fields=['major', 'target_course_code']),
+            models.Index(fields=['major', 'raw_template_cell_id']),
+        ]
+
+    def __str__(self):
+        return f'{self.smccd_course_code} -> {self.target_course_code}'
 
 
 class StudentPlanItem(models.Model):

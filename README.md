@@ -29,3 +29,25 @@ python manage.py createsuperuser
 ```
 
 Then open `http://127.0.0.1:8000/admin/` to add ASSIST conversions and major-prep requirements.
+
+## Import ASSIST Major Agreements
+
+Import a bounded test set:
+
+```powershell
+python manage.py scrape_assist --targets "University of California, Berkeley" "University of California, Santa Cruz" --major-limit 2
+```
+
+Import all available non-community-college targets for the three SMCCD colleges:
+
+```powershell
+python manage.py scrape_assist
+```
+
+Useful limits while testing:
+
+```powershell
+python manage.py scrape_assist --target-limit 5 --major-limit 10
+```
+
+The scraper defaults to ASSIST academic year `2025-2026` (`academic_year_id=76`). Raw ASSIST JSON is kept in `assist_json/` by default. Use `--refresh-cache` to force a re-download of cached files.

@@ -18,6 +18,7 @@
     </a>
     <nav>
       <a href="{% url 'guide:home' %}">Paths</a>
+      <a href="{% url 'guide:major_path' %}">Major Path</a>
       <a href="{% url 'guide:course_search' %}">Courses</a>
       <a href="/admin/">Admin</a>
     </nav>
@@ -34,5 +35,6 @@
   <main>
     {% block content %}{% endblock %}
   </main>
+  {% block scripts %}{% endblock %}
 </body>
 </html>

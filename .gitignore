@@ -39,3 +39,10 @@ htmlcov/
 .vscode/
 .DS_Store
 Thumbs.db
+
+#data
+assist_json/
+database_alt.db
+database.db.bak
+database_pre_prune.db.bak
+assist_json.sqlite3
