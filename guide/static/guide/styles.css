@@ -731,13 +731,16 @@ summary::-webkit-details-marker {
   margin-top: 1rem;
 }
 
-.progress-major-item {
-  align-items: flex-start;
+.plan-item.progress-major-item {
+  display: block;
+  padding: 16px;
 }
 
 .progress-major-main {
   display: grid;
   gap: 0.25rem;
+  min-width: 0;
+  width: 100%;
 }
 
 .progress-destinations {
@@ -747,15 +750,16 @@ summary::-webkit-details-marker {
 }
 
 .progress-destination-row {
-  display: flex;
-  justify-content: space-between;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
   gap: 1rem;
-  align-items: flex-start;
+  align-items: start;
 }
 
 .progress-destination-row small {
   color: var(--muted);
   display: block;
+  min-width: 0;
 }
 
 @media (max-width: 900px) {

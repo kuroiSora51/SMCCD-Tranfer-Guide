@@ -21,13 +21,6 @@
   <div class="path-grid progress-grid">
     <article class="path-card">
       <div>
-        <p class="path-audience">Paths app</p>
-        <h3>{{ summary.paths_complete }} / {{ summary.paths_total }}</h3>
-        <p>General education and transfer-path items marked complete.</p>
-      </div>
-    </article>
-    <article class="path-card">
-      <div>
         <p class="path-audience">Courses app</p>
         <h3>{{ summary.courses_complete }} / {{ summary.courses_total }}</h3>
         <p>Live course sections you are tracking for enrollment.</p>
@@ -57,15 +50,15 @@
   </div>
   <div class="plan-items progress-list">
     {% for group in major_groups %}
-      <div class="plan-item progress-major-item {% if group.is_complete %}complete{% endif %}">
-        <div class="progress-major-main">
+      <div class="plan-item progress-major-item {% if group.is_complete %}complete{% endif %}" style="display:block;padding:16px;">
+        <div class="progress-major-main" style="display:grid;gap:.25rem;width:100%;">
           <strong>{{ group.course_code }}{% if group.course_title %} {{ group.course_title }}{% endif %}</strong>
           <span>{{ group.source_college }}</span>
-          <div class="progress-destinations">
+          <div class="progress-destinations" style="display:grid;gap:.5rem;margin-top:.35rem;">
             {% for destination in group.destinations %}
-              <div class="progress-destination-row">
-                <small>|-&gt; {{ destination.target_requirement }} in {{ destination.school }} for {{ destination.major }}</small>
-                <span class="inline-actions">
+              <div class="progress-destination-row" style="display:grid;grid-template-columns:minmax(0,1fr) auto;gap:1rem;align-items:start;">
+                <small style="min-width:0;">|-&gt; {{ destination.target_requirement }} in {{ destination.school }} for {{ destination.major }}</small>
+                <div class="inline-actions" style="display:inline-flex;align-items:center;gap:.6rem;flex-wrap:wrap;margin-top:0;">
                   <form method="post" action="{% url 'major_path_app:toggle_major_course' destination.selection_id %}">
                     {% csrf_token %}
                     <input type="hidden" name="next" value="{% url 'progress_app:overview' %}">
@@ -76,7 +69,7 @@
                     <input type="hidden" name="next" value="{% url 'progress_app:overview' %}">
                     <button type="submit" class="text-button">Remove</button>
                   </form>
-                </span>
+                </div>
               </div>
             {% endfor %}
           </div>

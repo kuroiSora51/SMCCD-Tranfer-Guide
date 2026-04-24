@@ -41,12 +41,21 @@
           <small>CRN {{ course.crn }} · {{ course.units|floatformat }} units{% if course.professor_names %} · {{ course.professor_names }}{% endif %}</small>
         </div>
         <span>{{ course.college_name }}</span>
-        <span>{{ course.class_days }} {{ course.time }}<small>{{ course.duration }}</small></span>
+        <span>
+          {% if course.class_days == 'N/A' and course.time == 'N/A' %}
+            Online
+          {% elif course.time == 'N/A' %}
+            {{ course.class_days }} Online
+          {% else %}
+            {{ course.class_days }} {{ course.time }}
+          {% endif %}
+          <small>{{ course.duration }}</small>
+        </span>
         <span>
           <strong>{{ course.status }}</strong>
           {% if course.seats_open != None %}<small>{{ course.seats_open }} open seats</small>{% endif %}
           <span class="inline-actions">
-            {% if course.href %}<a href="{{ course.href }}" target="_blank" rel="noreferrer">Schedule</a>{% endif %}
+            {% if course.href %}<a href="{{ course.href }}" target="_blank" rel="noreferrer">See</a>{% endif %}
             <form method="post" action="{% url 'courses_app:add_course_selection' course.id %}">
               {% csrf_token %}
               <input type="hidden" name="next" value="{{ request.get_full_path }}">
