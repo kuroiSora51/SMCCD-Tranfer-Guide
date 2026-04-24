@@ -20,7 +20,7 @@ media/
 staticfiles/
 
 # Local SQLite data
-database.db
+
 database.db-journal
 
 # Environment files
