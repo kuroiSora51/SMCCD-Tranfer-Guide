@@ -1,0 +1,143 @@
+{% extends 'guide/base.html' %}
+
+{% block title %}Progress | STG{% endblock %}
+
+{% block content %}
+<section class="path-hero compact-hero">
+  <div>
+    <p class="eyebrow">Cross-app progress</p>
+    <h1>Track your transfer work in one place.</h1>
+    <p>Review GE plans, live course selections, and major-prep equivalences together so the next enrollment decision stays tied to the transfer goal it supports.</p>
+  </div>
+  <div class="progress-box">
+    <span>{{ summary.overall_complete }} of {{ summary.overall_total }} items complete</span>
+    <div class="progress-bar" aria-label="{{ summary.overall_percent }} percent complete">
+      <i style="width: {{ summary.overall_percent }}%"></i>
+    </div>
+  </div>
+</section>
+
+<section class="section">
+  <div class="path-grid progress-grid">
+    <article class="path-card">
+      <div>
+        <p class="path-audience">Paths app</p>
+        <h3>{{ summary.paths_complete }} / {{ summary.paths_total }}</h3>
+        <p>General education and transfer-path items marked complete.</p>
+      </div>
+    </article>
+    <article class="path-card">
+      <div>
+        <p class="path-audience">Courses app</p>
+        <h3>{{ summary.courses_complete }} / {{ summary.courses_total }}</h3>
+        <p>Live course sections you are tracking for enrollment.</p>
+      </div>
+    </article>
+    <article class="path-card">
+      <div>
+        <p class="path-audience">Major Path app</p>
+        <h3>{{ summary.majors_complete }} / {{ summary.majors_total }}</h3>
+        <p>ASSIST-backed major-prep equivalents saved from articulation results.</p>
+      </div>
+    </article>
+    <article class="path-card">
+      <div>
+        <p class="path-audience">Progress app</p>
+        <h3>{{ summary.overall_percent }}%</h3>
+        <p>Overall completion across the other three planning apps.</p>
+      </div>
+    </article>
+  </div>
+</section>
+
+<section class="section">
+  <div class="section-heading">
+    <p class="eyebrow">Major path</p>
+    <h2>Courses tied to transfer goals</h2>
+  </div>
+  <div class="plan-items progress-list">
+    {% for group in major_groups %}
+      <div class="plan-item progress-major-item {% if group.is_complete %}complete{% endif %}">
+        <div class="progress-major-main">
+          <strong>{{ group.course_code }}{% if group.course_title %} {{ group.course_title }}{% endif %}</strong>
+          <span>{{ group.source_college }}</span>
+          <div class="progress-destinations">
+            {% for destination in group.destinations %}
+              <div class="progress-destination-row">
+                <small>|-&gt; {{ destination.target_requirement }} in {{ destination.school }} for {{ destination.major }}</small>
+                <span class="inline-actions">
+                  <form method="post" action="{% url 'major_path_app:toggle_major_course' destination.selection_id %}">
+                    {% csrf_token %}
+                    <input type="hidden" name="next" value="{% url 'progress_app:overview' %}">
+                    <button type="submit" class="check" title="Toggle completion">{% if destination.is_complete %}✓{% else %}○{% endif %}</button>
+                  </form>
+                  <form method="post" action="{% url 'major_path_app:delete_major_course' destination.selection_id %}">
+                    {% csrf_token %}
+                    <input type="hidden" name="next" value="{% url 'progress_app:overview' %}">
+                    <button type="submit" class="text-button">Remove</button>
+                  </form>
+                </span>
+              </div>
+            {% endfor %}
+          </div>
+        </div>
+      </div>
+    {% empty %}
+      <p>No major-prep courses saved yet. Save a direct equivalent from Major Path.</p>
+    {% endfor %}
+  </div>
+</section>
+
+<section class="section">
+  <div class="section-heading">
+    <p class="eyebrow">Courses app</p>
+    <h2>Tracked live sections</h2>
+  </div>
+  <div class="plan-items progress-list">
+    {% for item in course_items %}
+      <div class="plan-item {% if item.is_complete %}complete{% endif %}">
+        <form method="post" action="{% url 'courses_app:toggle_course_selection' item.id %}">
+          {% csrf_token %}
+          <input type="hidden" name="next" value="{% url 'progress_app:overview' %}">
+          <button type="submit" class="check" title="Toggle completion">{% if item.is_complete %}✓{% else %}○{% endif %}</button>
+        </form>
+        <div>
+          <strong>{{ item.course.code }}</strong>
+          <span>{{ item.course.title }} · {{ item.course.college_name }} · {{ item.course.status }}</span>
+        </div>
+        <form method="post" action="{% url 'courses_app:delete_course_selection' item.id %}">
+          {% csrf_token %}
+          <input type="hidden" name="next" value="{% url 'progress_app:overview' %}">
+          <button type="submit" class="text-button">Remove</button>
+        </form>
+      </div>
+    {% empty %}
+      <p>No live sections tracked yet. Add one from Courses.</p>
+    {% endfor %}
+  </div>
+</section>
+
+<section class="section">
+  <div class="section-heading">
+    <p class="eyebrow">Paths app</p>
+    <h2>General education plans</h2>
+  </div>
+  <div class="path-grid">
+    {% for group in path_groups %}
+      <article class="path-card">
+        <div>
+          <p class="path-audience">{{ group.complete }} / {{ group.total }} complete</p>
+          <h3>{{ group.path.name }}</h3>
+          <p>{{ group.path.summary }}</p>
+        </div>
+        <div class="card-meta">
+          <span>{{ group.items|length }} tracked item{{ group.items|length|pluralize }}</span>
+          <a href="{% url 'paths_app:path_detail' group.path.slug %}">Open plan</a>
+        </div>
+      </article>
+    {% empty %}
+      <p>No path items saved yet. Add a requirement item from Paths.</p>
+    {% endfor %}
+  </div>
+</section>
+{% endblock %}

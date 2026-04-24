@@ -674,6 +674,18 @@ summary::-webkit-details-marker {
   font-size: 0.88rem;
 }
 
+.inline-actions {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.6rem;
+  flex-wrap: wrap;
+  margin-top: 0.35rem;
+}
+
+.inline-actions form {
+  margin: 0;
+}
+
 .empty-state {
   padding: 28px;
   border: 1px dashed var(--line);
@@ -711,6 +723,41 @@ summary::-webkit-details-marker {
   min-width: 0;
 }
 
+.progress-grid {
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+}
+
+.progress-list {
+  margin-top: 1rem;
+}
+
+.progress-major-item {
+  align-items: flex-start;
+}
+
+.progress-major-main {
+  display: grid;
+  gap: 0.25rem;
+}
+
+.progress-destinations {
+  display: grid;
+  gap: 0.5rem;
+  margin-top: 0.35rem;
+}
+
+.progress-destination-row {
+  display: flex;
+  justify-content: space-between;
+  gap: 1rem;
+  align-items: flex-start;
+}
+
+.progress-destination-row small {
+  color: var(--muted);
+  display: block;
+}
+
 @media (max-width: 900px) {
   .site-header,
   .hero,
@@ -729,6 +776,10 @@ summary::-webkit-details-marker {
 
   .major-search-row {
     grid-template-columns: 1fr;
+  }
+
+  .progress-destination-row {
+    flex-direction: column;
   }
 
   .site-header,

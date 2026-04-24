@@ -1,0 +1,65 @@
+{% extends 'guide/base.html' %}
+
+{% block title %}Course Search | STG{% endblock %}
+
+{% block content %}
+<section class="section">
+  <div class="section-heading">
+    <p class="eyebrow">SMCCD courses</p>
+    <h1>Search the schedule database</h1>
+  </div>
+
+  <form class="filters" method="get">
+    <input name="q" value="{{ query }}" type="search" placeholder="Course, CRN, professor, campus">
+    <select name="college">
+      <option value="">All colleges</option>
+      {% for option in colleges %}
+        <option value="{{ option }}" {% if option == college %}selected{% endif %}>{{ option }}</option>
+      {% endfor %}
+    </select>
+    <select name="status">
+      <option value="">All statuses</option>
+      {% for option in statuses %}
+        <option value="{{ option }}" {% if option == status %}selected{% endif %}>{{ option }}</option>
+      {% endfor %}
+    </select>
+    <button type="submit">Filter</button>
+  </form>
+
+  <div class="course-table">
+    <div class="course-row header">
+      <span>Course</span>
+      <span>College</span>
+      <span>Meeting</span>
+      <span>Status</span>
+    </div>
+    {% for course in courses %}
+      <article class="course-row">
+        <div>
+          <strong>{{ course.code }}</strong>
+          <span>{{ course.title }}</span>
+          <small>CRN {{ course.crn }} · {{ course.units|floatformat }} units{% if course.professor_names %} · {{ course.professor_names }}{% endif %}</small>
+        </div>
+        <span>{{ course.college_name }}</span>
+        <span>{{ course.class_days }} {{ course.time }}<small>{{ course.duration }}</small></span>
+        <span>
+          <strong>{{ course.status }}</strong>
+          {% if course.seats_open != None %}<small>{{ course.seats_open }} open seats</small>{% endif %}
+          <span class="inline-actions">
+            {% if course.href %}<a href="{{ course.href }}" target="_blank" rel="noreferrer">Schedule</a>{% endif %}
+            <form method="post" action="{% url 'courses_app:add_course_selection' course.id %}">
+              {% csrf_token %}
+              <input type="hidden" name="next" value="{{ request.get_full_path }}">
+              <button type="submit" class="text-button" {% if course.id in selected_course_ids %}disabled{% endif %}>
+                {% if course.id in selected_course_ids %}Tracked{% else %}Track{% endif %}
+              </button>
+            </form>
+          </span>
+        </span>
+      </article>
+    {% empty %}
+      <p>No courses matched those filters.</p>
+    {% endfor %}
+  </div>
+</section>
+{% endblock %}

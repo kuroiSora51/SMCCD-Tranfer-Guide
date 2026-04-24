@@ -10,6 +10,8 @@ from .models import (
     MajorRequirement,
     Professor,
     RequirementArea,
+    StudentCourseSelection,
+    StudentMajorCourseSelection,
     StudentPlanItem,
     TransferPath,
 )
@@ -117,3 +119,22 @@ class StudentPlanItemAdmin(admin.ModelAdmin):
     list_display = ('session_key', 'path', 'area', 'course', 'custom_label', 'is_complete', 'updated_at')
     search_fields = ('session_key', 'custom_label', 'notes')
     list_filter = ('path', 'is_complete', 'updated_at')
+
+
+@admin.register(StudentCourseSelection)
+class StudentCourseSelectionAdmin(admin.ModelAdmin):
+    list_display = ('session_key', 'course', 'is_complete', 'updated_at')
+    search_fields = ('session_key', 'course__name', 'course__crn', 'course__college_name')
+    list_filter = ('is_complete', 'course__college_name', 'updated_at')
+
+
+@admin.register(StudentMajorCourseSelection)
+class StudentMajorCourseSelectionAdmin(admin.ModelAdmin):
+    list_display = ('session_key', 'equivalence', 'is_complete', 'updated_at')
+    search_fields = (
+        'session_key',
+        'equivalence__smccd_course_code',
+        'equivalence__major__name',
+        'equivalence__major__agreement__target_institution',
+    )
+    list_filter = ('is_complete', 'equivalence__major__agreement__source_college', 'updated_at')

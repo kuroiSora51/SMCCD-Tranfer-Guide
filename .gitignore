@@ -46,3 +46,5 @@ database_alt.db
 database.db.bak
 database_pre_prune.db.bak
 assist_json.sqlite3
+database_merged.db
+database_refactor_premerge.db.bak

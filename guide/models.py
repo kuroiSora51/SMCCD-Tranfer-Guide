@@ -285,3 +285,39 @@ class StudentPlanItem(models.Model):
         if self.course_id:
             return str(self.course)
         return 'Plan item'
+
+
+class StudentCourseSelection(models.Model):
+    session_key = models.CharField(max_length=80, db_index=True)
+    course = models.ForeignKey(Course, on_delete=models.CASCADE, db_constraint=False)
+    notes = models.TextField(blank=True)
+    is_complete = models.BooleanField(default=False)
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        ordering = ['course__college_name', 'course__name', 'created_at']
+        unique_together = [('session_key', 'course')]
+
+    def __str__(self):
+        return str(self.course)
+
+
+class StudentMajorCourseSelection(models.Model):
+    session_key = models.CharField(max_length=80, db_index=True)
+    equivalence = models.ForeignKey(CourseEquivalence, on_delete=models.CASCADE, related_name='student_selections')
+    notes = models.TextField(blank=True)
+    is_complete = models.BooleanField(default=False)
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        ordering = [
+            'equivalence__major__agreement__source_college',
+            'equivalence__smccd_course_code',
+            'equivalence__major__agreement__target_institution',
+        ]
+        unique_together = [('session_key', 'equivalence')]
+
+    def __str__(self):
+        return f'{self.equivalence.smccd_course_code} for {self.equivalence.major.name}'

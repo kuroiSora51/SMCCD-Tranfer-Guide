@@ -32,6 +32,10 @@ ALLOWED_HOSTS = ['127.0.0.1', 'localhost', 'testserver']
 
 INSTALLED_APPS = [
     'guide',
+    'paths_app',
+    'courses_app',
+    'major_path_app',
+    'progress_app',
     'django.contrib.admin',
     'django.contrib.auth',
     'django.contrib.contenttypes',

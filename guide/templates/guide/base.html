@@ -17,9 +17,11 @@
       </span>
     </a>
     <nav>
-      <a href="{% url 'guide:home' %}">Paths</a>
-      <a href="{% url 'guide:major_path' %}">Major Path</a>
-      <a href="{% url 'guide:course_search' %}">Courses</a>
+      <a href="{% url 'guide:home' %}">Home</a>
+      <a href="{% url 'paths_app:path_detail' 'igetc' %}">Paths</a>
+      <a href="{% url 'courses_app:course_search' %}">Courses</a>
+      <a href="{% url 'major_path_app:major_path' %}">Major Path</a>
+      <a href="{% url 'progress_app:overview' %}">Progress</a>
       <a href="/admin/">Admin</a>
     </nav>
   </header>

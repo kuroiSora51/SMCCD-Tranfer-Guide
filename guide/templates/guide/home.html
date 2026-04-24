@@ -6,16 +6,16 @@
 <section class="hero">
   <div class="hero-copy">
     <p class="eyebrow">Transfer planning for SMCCD students</p>
-    <h1>Pick a path, build a course plan, and layer in major requirements.</h1>
-    <p>Start with a general education pattern, then use the course database and ASSIST-backed entries as your articulation data grows.</p>
+    <h1>Work across paths, live classes, major prep, and progress from one planner.</h1>
+    <p>Each planning surface now lives in its own Django app, with progress pulling the saved work together across GE planning, course tracking, and major articulation.</p>
   </div>
-  <form class="search-panel" action="{% url 'guide:course_search' %}" method="get">
+  <form class="search-panel" action="{% url 'courses_app:course_search' %}" method="get">
     <label for="q">Find a course</label>
     <div class="search-row">
       <input id="q" name="q" type="search" placeholder="MATH 251, ENGL 100, professor, CRN">
       <button type="submit">Search</button>
     </div>
-    <a class="panel-link" href="{% url 'guide:major_path' %}">Choose transfer schools for major prep</a>
+    <a class="panel-link" href="{% url 'progress_app:overview' %}">Open progress dashboard</a>
   </form>
 </section>
 
@@ -34,12 +34,65 @@
         </div>
         <div class="card-meta">
           <span>{{ path.areas.count }} areas</span>
-          <a href="{% url 'guide:path_detail' path.slug %}">Open plan</a>
+          <a href="{% url 'paths_app:path_detail' path.slug %}">Open plan</a>
         </div>
       </article>
     {% empty %}
       <p>No transfer paths have been configured yet. Run migrations to seed the starter paths.</p>
     {% endfor %}
+  </div>
+</section>
+
+<section class="section">
+  <div class="section-heading">
+    <p class="eyebrow">Feature apps</p>
+    <h2>Jump directly into a workflow</h2>
+  </div>
+  <div class="path-grid">
+    <article class="path-card">
+      <div>
+        <p class="path-audience">Paths app</p>
+        <h3>General education paths</h3>
+        <p>Track IGETC, UC 7-course pattern, CSU Breadth, and your area-by-area completion.</p>
+      </div>
+      <div class="card-meta">
+        <span>Transfer frameworks</span>
+        <a href="{% url 'paths_app:path_detail' 'igetc' %}">Open</a>
+      </div>
+    </article>
+    <article class="path-card">
+      <div>
+        <p class="path-audience">Courses app</p>
+        <h3>Live course search</h3>
+        <p>Search current sections, then save the ones you may want to enroll in.</p>
+      </div>
+      <div class="card-meta">
+        <span>Schedule DB</span>
+        <a href="{% url 'courses_app:course_search' %}">Open</a>
+      </div>
+    </article>
+    <article class="path-card">
+      <div>
+        <p class="path-audience">Major Path app</p>
+        <h3>ASSIST-backed major prep</h3>
+        <p>Choose one source college, one destination school, and one major to save direct equivalents.</p>
+      </div>
+      <div class="card-meta">
+        <span>Articulation rules</span>
+        <a href="{% url 'major_path_app:major_path' %}">Open</a>
+      </div>
+    </article>
+    <article class="path-card">
+      <div>
+        <p class="path-audience">Progress app</p>
+        <h3>Unified progress</h3>
+        <p>See GE plans, tracked sections, and major-transfer goals in one place.</p>
+      </div>
+      <div class="card-meta">
+        <span>Cross-app view</span>
+        <a href="{% url 'progress_app:overview' %}">Open</a>
+      </div>
+    </article>
   </div>
 </section>
 
